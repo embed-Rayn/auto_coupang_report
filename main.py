@@ -8,6 +8,7 @@ import shutil
 import os
 import sys
 import re
+import pandas as pd
 
 
 def date_minus_day_to_str(date_obj, days = 1, str_format = "%Y년 %m월 %d일"):
@@ -144,21 +145,23 @@ class WindowClass(QMainWindow, Ui_Dialog):
             except KeyError:
                 dataset_daily[date_obj] = [temp]
 
-        dataset_cumul = {}
+        dataset_cumul = []
         for row in row_values_cumul:           
-            campaign_name = row[6]
             temp = {}
-            temp["date"] = datetime.strptime(str(int(row[0])), "%Y%m%d").date()
-            temp["exposure_num"] = row[7]
-            temp["click_num"] = row[8]
-            temp["ad_cost"] = row[9]
-            temp["convert_num"] = row[15]
-            temp["convert_cost"] = row[18]
-            try:
-                dataset_cumul[campaign_name].append(temp)
-            except KeyError:
-                dataset_cumul[campaign_name] = [temp]
-
+            temp["campaign_name"] = row[4]
+            if row[11]:
+                keyword = row[11]
+            else:
+                keyword = "비검색 영역"
+            temp["keyword"] = keyword
+            temp["exposure_num"] = row[12]
+            temp["click_num"] = row[13]
+            temp["ad_cost"] = row[14]
+            temp["convert_num"] = row[28]
+            temp["convert_cost"] = row[31]
+            dataset_cumul.append(temp)
+        print(pd.DataFrame(dataset_cumul))
+        cumul_summary = {}
         for key, records in dataset_cumul.items():
             total = {
                 "exposure_num": 0,
@@ -168,12 +171,10 @@ class WindowClass(QMainWindow, Ui_Dialog):
                 "convert_cost": 0
             }
             for record in records:
-                # try:
                 for sub_key in total:
                     total[sub_key] += int(record[sub_key])
-                # except Error as e:
-                #     print(e)
-            dataset_cumul[key] = total
+            cumul_summary[key] = total
+        print(cumul_summary)
 
 
         if len(sheets) != 1:
