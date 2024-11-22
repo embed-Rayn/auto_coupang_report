@@ -146,7 +146,7 @@ class WindowClass(QMainWindow, Ui_Dialog):
                 dataset_daily[date_obj] = [temp]
 
         dataset_cumul = []
-        for row in row_values_cumul:           
+        for row in row_values_cumul:
             temp = {}
             temp["campaign_name"] = row[4]
             if row[11]:
@@ -160,22 +160,10 @@ class WindowClass(QMainWindow, Ui_Dialog):
             temp["convert_num"] = row[28]
             temp["convert_cost"] = row[31]
             dataset_cumul.append(temp)
-        print(pd.DataFrame(dataset_cumul))
-        cumul_summary = {}
-        for key, records in dataset_cumul.items():
-            total = {
-                "exposure_num": 0,
-                "click_num": 0,
-                "ad_cost": 0,
-                "convert_num": 0,
-                "convert_cost": 0
-            }
-            for record in records:
-                for sub_key in total:
-                    total[sub_key] += int(record[sub_key])
-            cumul_summary[key] = total
-        print(cumul_summary)
-
+        df = pd.DataFrame(dataset_cumul)
+        result_campaign = df.groupby("campaign_name")[["exposure_num", "click_num", "ad_cost", "convert_num", "convert_cost"]].sum()
+        result_by_keyword = df.groupby("keyword")[["exposure_num", "click_num", "ad_cost", "convert_num", "convert_cost"]].sum()
+        result_by_keyword = result_by_keyword.sort_values(by=["ad_cost", "convert_num"], ascending=[False, False]).reset_index()
 
         if len(sheets) != 1:
             return False
@@ -185,7 +173,6 @@ class WindowClass(QMainWindow, Ui_Dialog):
         shutil.copy(self.input_file_path_3, self.output_file_path)
         #################################################### 리포트 파일
         #################################################### ["요약"] 시트
-        print(self.output_file_path)
         report_wb = openpyxl.load_workbook(self.output_file_path)
         report_sheet = report_wb["요약"]
         date_str = date_minus_day_to_str(report_day, 1, "%Y년 %m월 %d일")
@@ -210,24 +197,33 @@ class WindowClass(QMainWindow, Ui_Dialog):
                     report_sheet[f"L{data_idx}"] = sum(campaign["convert_cost"] for campaign in dataset_daily[date_obj])
         #################################################### ["쿠팡_누적"] 시트
         report_sheet = report_wb["쿠팡_누적"]
-        key_col_dict = {"exposure_num": "D", "click_num": "E", "ad_cost": "H", "convert_num": "I", "convert_cost": "L"}
+        key_col_dict_c = {"campaign_name": "C", "exposure_num": "D", "click_num": "E", "ad_cost": "H", "convert_num": "I", "convert_cost": "L"}
         rows = [9, 10]
-        for row in rows:
-            campaign = report_sheet[f"C{row}"].value
-            for key, col in key_col_dict.items():
-                report_sheet[f"{col}{row}"] = dataset_cumul[campaign][key]
 
+        for row in rows:
+            # Get the campaign name from the Excel sheet
+            campaign = report_sheet[f"{key_col_dict_c['campaign_name']}{row}"].value
+            
+            if campaign in result_campaign.index:
+                for key, col in key_col_dict_c.items():
+                    if key != "campaign_name":  # Skip writing the campaign name back
+                        # Populate the cell with the corresponding value from the DataFrame
+                        report_sheet[f"{col}{row}"] = result_campaign.loc[campaign, key]
+
+        key_col_dict_k = {"keyword": "C", "exposure_num": "D", "click_num": "E", "ad_cost": "H", "convert_num": "I", "convert_cost": "L"}
+        start_row = 33
+        for idx, row in result_by_keyword.iterrows():
+            for key, col in key_col_dict_k.items():
+                report_sheet[f"{col}{start_row+idx}"] = row[key]
 
         # 변경사항 저장
         report_wb.save(self.output_file_path)
         report_wb.close()
         return True
 
-
     def push_execute(self):
         rst = self.auto_report()
         self.finish_task(rst)
-            
 
 
 if __name__ == "__main__":
