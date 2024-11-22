@@ -3,18 +3,12 @@ from datetime import datetime, timedelta
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import *
 from PyQt6 import QtGui
-from gui import Ui_Dialog
+from gui_flep import Ui_Dialog
 import shutil
 import os
 import sys
 import re
 import pandas as pd
-
-
-def date_plus_day_to_str(date_obj, days = 1, str_format = "%Y년 %m월 %d일"):
-    after_oneday_obj = date_obj + timedelta(days=days)
-    formatted_date = after_oneday_obj.strftime(str_format)
-    return formatted_date
 
 
 def is_xlsx(file_path):
@@ -36,7 +30,8 @@ class WindowClass(QMainWindow, Ui_Dialog):
         font1 = QtGui.QFont("새굴림", 15)
         h1_list = [self.label_1, self.label_2, self.label_3, self.label_4]
         [obj.setFont(font1) for obj in h1_list]
-
+        self.label_6.setStyleSheet("color: red;")
+        
         self.input_file_path_1 = ""
         self.input_file_path_2 = ""
         self.input_file_path_3 = ""
@@ -165,7 +160,7 @@ class WindowClass(QMainWindow, Ui_Dialog):
         df = pd.DataFrame(dataset_cumul)
         result_campaign = df.groupby("campaign_name")[["exposure_num", "click_num", "ad_cost", "convert_num", "convert_cost"]].sum()
         result_by_keyword = df.groupby("keyword")[["exposure_num", "click_num", "ad_cost", "convert_num", "convert_cost"]].sum()
-        result_by_keyword = result_by_keyword.sort_values(by=["ad_cost", "convert_num"], ascending=[False, False]).reset_index()
+        result_by_keyword = result_by_keyword.sort_values(by=["convert_num", "ad_cost"], ascending=[False, False]).reset_index()
 
         if len(sheets) != 1:
             return False
@@ -181,10 +176,10 @@ class WindowClass(QMainWindow, Ui_Dialog):
         #################################################### ["요약"] 시트
         report_wb = openpyxl.load_workbook(self.output_file_path)
         report_sheet = report_wb["요약"]
-        date_str = date_plus_day_to_str(report_day, 1, "%Y년 %m월 %d일")
-        report_sheet["B31"] = date_str
-        date_str = date_plus_day_to_str(report_day, 1, "%Y-%m-%d")
-        report_sheet["C104"] = date_str
+        report_sheet["C83"] = report_day
+        report_sheet["C102"] = report_day
+        report_sheet["C83"].number_format = "YYYY-MM-DD"
+        report_sheet["C102"].number_format = "YYYY-MM-DD"
         #################################################### ["쿠팡_일일"] 시트
         report_sheet = report_wb["쿠팡_일일"]
         for date_obj in dataset_daily.keys():
@@ -221,9 +216,11 @@ class WindowClass(QMainWindow, Ui_Dialog):
         for idx, row in result_by_keyword.iterrows():
             for key, col in key_col_dict_k.items():
                 report_sheet[f"{col}{start_row+idx}"] = row[key]
-
-        # 변경사항 저장
-        report_wb.save(self.output_file_path)
+        try:
+            report_wb.save(self.output_file_path)
+        except PermissionError:
+            self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.output_file_path}파일이 이미 존재하거나 열려있어 실패.\n")
+            self.is_successed = False
         report_wb.close()
         return True
 

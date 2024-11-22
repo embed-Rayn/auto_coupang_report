@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'gui.ui'
+# Form implementation generated from reading ui file 'gui_deer.ui'
 #
 # Created by: PyQt6 UI code generator 6.7.1
 #
@@ -114,6 +114,26 @@ class Ui_Dialog(object):
         self.line_4.setFrameShape(QtWidgets.QFrame.Shape.VLine)
         self.line_4.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
         self.line_4.setObjectName("line_4")
+        self.label_5 = QtWidgets.QLabel(parent=Dialog)
+        self.label_5.setGeometry(QtCore.QRect(420, 213, 151, 31))
+        font = QtGui.QFont()
+        font.setFamily("나눔스퀘어라운드 Bold")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_5.setFont(font)
+        self.label_5.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.label_5.setObjectName("label_5")
+        self.label_6 = QtWidgets.QLabel(parent=Dialog)
+        self.label_6.setGeometry(QtCore.QRect(330, 213, 101, 31))
+        font = QtGui.QFont()
+        font.setFamily("나눔스퀘어라운드 ExtraBold")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_6.setFont(font)
+        self.label_6.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.label_6.setObjectName("label_6")
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -128,9 +148,11 @@ class Ui_Dialog(object):
         self.textEdit_log.setHtml(_translate("Dialog", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Gulim\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
+"</style></head><body style=\" font-family:\'Gulim\'; font-size:8.76522pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:9pt;\"><br /></p></body></html>"))
         self.label_2.setText(_translate("Dialog", "누적 데이터 위치"))
         self.btn_search_excel_2.setText(_translate("Dialog", "검색"))
         self.btn_search_excel_3.setText(_translate("Dialog", "검색"))
         self.label_3.setText(_translate("Dialog", "리포트 엑셀 위치"))
+        self.label_5.setText(_translate("Dialog", "보고서 전용"))
+        self.label_6.setText(_translate("Dialog", "디어캠프"))
