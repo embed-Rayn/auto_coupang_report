@@ -22,7 +22,7 @@ class WindowClass(QMainWindow, Ui_Dialog):
         self.ui = Ui_Dialog()
         self.setupUi(self)
         self.setAcceptDrops(True)
-        self.setWindowTitle("Auto Coupang report")
+        self.setWindowTitle("Auto Coupang report - DeerCamp")
 
         self.setFixedWidth(915)
         self.setFixedHeight(554)
