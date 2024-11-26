@@ -101,7 +101,7 @@ class WindowClass(QMainWindow, Ui_Dialog):
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}작업이 완료 됐습니다.\n생성한 리포트 파일 위치: {self.output_file_path}\n")
         else:
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.input_file_path_1}sheet가 여러개 입니다. 실행 종료\n")
-        self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}================================================================\n")
+        self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}===============================================================================================\n")
         self.is_successed = True
 
 
@@ -130,7 +130,8 @@ class WindowClass(QMainWindow, Ui_Dialog):
         df_monthly_total = pd.read_excel(self.input_file_path_3)
         df_monthly_total = df_monthly_total[["광고집행 상품명", "키워드", "노출수", "클릭수", "광고비", "총 판매수량(14일)", "총 전환매출액(14일)"]]
         df_monthly_total.columns = ["상품명", "키워드", "노출수", "클릭수", "광고비", "전환수", "전환매출"]
-
+        df_monthly_total["키워드"] = df_monthly_total["키워드"].fillna("비검색 영역")
+        
         summary_product = df_monthly_total.groupby("상품명")[["노출수", "클릭수", "광고비", "전환수", "전환매출"]].sum()
         summary_product = summary_product.sort_values(by=["전환수", "광고비"], ascending=[False, False]).reset_index()
         contains_x = df_monthly_total[df_monthly_total['상품명'].str.contains("X", na=False)]
@@ -194,7 +195,7 @@ class WindowClass(QMainWindow, Ui_Dialog):
             date_obj = row['날짜']
             for row_idx, cell in enumerate(report_sheet["AD"]):
                 try:
-                    cv_date = cell.value.datetime()
+                    cv_date = cell.value.date()
                     if cv_date.strftime("%y-%m-%d") == date_obj.strftime("%y-%m-%d"):
                         break
                 except AttributeError:
@@ -205,14 +206,14 @@ class WindowClass(QMainWindow, Ui_Dialog):
 
         #################################################### ["쿠팡_누적"] 시트
         report_sheet = report_wb["쿠팡_누적"]
-        summary_start_row = 9
-        start_row = 36
 
+        summary_start_row = 9
         key_col_dict_s = {"상품명": "C", "노출수": "D", "클릭수": "E", "광고비": "H", "전환수": "I", "전환매출": "L"}
         for data_row_idx, data_row in summary_product.iterrows():
             for key, col in key_col_dict_s.items():
                 report_sheet[f"{col}{summary_start_row+data_row_idx}"] = data_row[key]
 
+        start_row = 36
         key_col_dict_o = {"키워드": "C", "노출수": "D", "클릭수": "E", "광고비": "H", "전환수": "I", "전환매출": "L"}
         for data_row_idx, data_row in contains_o.iterrows():
             for key, col in key_col_dict_o.items():
