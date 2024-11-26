@@ -1,6 +1,5 @@
 import openpyxl
 from datetime import datetime, timedelta
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import *
 from PyQt6 import QtGui
 from gui_flep import Ui_Dialog
@@ -86,6 +85,7 @@ class WindowClass(QMainWindow, Ui_Dialog):
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}작업이 완료 됐습니다.\n생성한 리포트 파일 위치: {self.output_file_path}\n")
         else:
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.input_file_path_1}sheet가 여러개 입니다. 실행 종료\n")
+        self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}================================================================\n")
         self.is_successed = True
 
 
