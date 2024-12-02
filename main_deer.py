@@ -78,14 +78,11 @@ class WindowClass(QMainWindow, Ui_Dialog):
 
 
     def finish_task(self, rst):
-        self.btn_search_excel_1.setEnabled(True)
-        self.btn_search_excel_2.setEnabled(True)
-        self.btn_search_excel_3.setEnabled(True)
         if rst and self.is_successed:
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}작업이 완료 됐습니다.\n생성한 리포트 파일 위치: {self.output_file_path}\n")
         else:
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.input_file_path_1}sheet가 여러개 입니다. 실행 종료\n")
-        self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}================================================================\n")
+        self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}===============================================================================================\n")
         self.is_successed = True
 
 
@@ -97,74 +94,15 @@ class WindowClass(QMainWindow, Ui_Dialog):
             old_date = match.group()
             new_date = report_day.strftime("%y%m%d")
             self.output_file_path = self.input_file_path_3.replace(old_date, f"/{new_date}_")
+        print(f"{report_day=}")
+        print(f"{self.output_file_path=}")
 
 
     def auto_report(self):
-        # data_xls_name = "data/20241105_data.xlsx"
-        # report_template_xls_name = "data/241106_dearcamp.xlsx"
-        workbook_dayily = openpyxl.load_workbook(self.input_file_path_1)
-        sheet = workbook_dayily.active  # 기본 활성화된 시트를 선택합니다. 특정 시트가 있으면 sheet = workbook["Sheet1"] 과 같이 지정합니다.
-        sheets = workbook_dayily.sheetnames
-        ## Excel 데이터 to 리스트
-        ### Daily 
-        row_values_daily = []
-        for row_idx, row in enumerate(sheet):
-            if row_idx == 0:
-                continue
-            row_data = [col.value for col in row]
-            row_values_daily.append(row_data)
-        workbook_dayily.close()
-        ### total 
-        workbook_cum = openpyxl.load_workbook(self.input_file_path_2)
-        sheet = workbook_cum.active  # 기본 활성화된 시트를 선택합니다. 특정 시트가 있으면 sheet = workbook["Sheet1"] 과 같이 지정합니다.
-        sheets = workbook_cum.sheetnames
-        row_values_cumul = []
-        for row_idx, row in enumerate(sheet):
-            if row_idx == 0:
-                continue
-            row_data = [col.value for col in row]
-            row_values_cumul.append(row_data)
-        workbook_cum.close()
-        ## 리스트 to Data
-        ### Daily
-        dataset_daily = {}
-        for row in row_values_daily:
-            date_obj = datetime.strptime(str(int(row[0])), "%Y%m%d").date()
-            temp = {}
-            temp["campaign"] = row[6]
-            temp["exposure_num"] = row[7]
-            temp["click_num"] = row[8]
-            temp["ad_cost"] = row[9]
-            temp["convert_num"] = row[15]
-            temp["convert_cost"] = row[18]
-            try:
-                dataset_daily[date_obj].append(temp)
-            except KeyError:
-                dataset_daily[date_obj] = [temp]
-        ### total 
-        dataset_cumul = []
-        for row in row_values_cumul:
-            temp = {}
-            temp["campaign_name"] = row[4]
-            if row[11]:
-                keyword = row[11]
-            else:
-                keyword = "비검색 영역"
-            temp["keyword"] = keyword
-            temp["exposure_num"] = row[12]
-            temp["click_num"] = row[13]
-            temp["ad_cost"] = row[14]
-            temp["convert_num"] = row[28]
-            temp["convert_cost"] = row[31]
-            dataset_cumul.append(temp)
-        df = pd.DataFrame(dataset_cumul)
-        result_campaign = df.groupby("campaign_name")[["exposure_num", "click_num", "ad_cost", "convert_num", "convert_cost"]].sum()
-        result_by_keyword = df.groupby("keyword")[["exposure_num", "click_num", "ad_cost", "convert_num", "convert_cost"]].sum()
-        result_by_keyword = result_by_keyword.sort_values(by=["convert_num", "ad_cost"], ascending=[False, False]).reset_index()
-
-        if len(sheets) != 1:
-            return False
-        report_day = max(dataset_daily.keys())
+        df_daily = pd.read_excel(self.input_file_path_1)
+        df_monthly_total = pd.read_excel(self.input_file_path_2)
+        df_daily['날짜'] = pd.to_datetime(df_daily['날짜'], format='%Y%m%d')
+        report_day = df_daily['날짜'].max()
         file_day = report_day + timedelta(days=1)
         self.process_file_path(file_day)
         try:
@@ -172,50 +110,63 @@ class WindowClass(QMainWindow, Ui_Dialog):
         except PermissionError:
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.output_file_path}파일이 이미 존재하거나 열려있어 실패.\n")
             self.is_successed = False
-        #################################################### 리포트 파일
-        #################################################### ["요약"] 시트
         report_wb = openpyxl.load_workbook(self.output_file_path)
+        #############################
+        report_sheet = report_wb["쿠팡_일일"] 
+        if not df_daily.empty:
+            df_daily = df_daily[["날짜", "캠페인명", "노출수", "클릭수", "광고비", "총 판매수량(14일)", "총 전환매출액(14일)"]]
+            df_daily.columns = ["날짜", "캠페인명", "노출수", "클릭수", "광고비", "전환수", "전환매출"]
+            df_daily = df_daily.groupby('날짜', as_index=False).sum()
+            key_col_dict = {"노출수": "D", "클릭수": "E", "광고비": "H", "전환수": "I", "전환매출": "L"}
+            for data_row_idx, row in df_daily.iterrows():
+                date_obj = row['날짜']
+                for row_idx, cell in enumerate(report_sheet["B"]):
+                    try:
+                        cv_date = cell.value.date()
+                        if cv_date.strftime("%y-%m-%d") == date_obj.strftime("%y-%m-%d"):
+                            break
+                    except AttributeError:
+                        continue
+                data_idx = row_idx + 1
+                for key, col in key_col_dict.items():
+                    report_sheet[f"{col}{data_idx}"] = row[key]
+        else:
+            self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.input_file_path_1}일일 데이터 파일이 비어있습니다.\n")
+        #############################################
         report_sheet = report_wb["요약"]
         report_sheet["B31"] = report_day
         report_sheet["C104"] = report_day
         report_sheet["B31"].number_format = "YYYY년 MM월 DD일"
         report_sheet["C104"].number_format = "YYYY-MM-DD"
-        #################################################### ["쿠팡_일일"] 시트
-        report_sheet = report_wb["쿠팡_일일"]
-        for date_obj in dataset_daily.keys():
-            for row_idx, cell in enumerate(report_sheet["B"]):
-                try:
-                    cv_date = cell.value.date()
-                except AttributeError:
-                    continue
-                if cv_date.strftime("%y-%m-%d") == date_obj.strftime("%y-%m-%d"):
-                    data_idx = row_idx + 1
-                    report_sheet[f"D{data_idx}"] = sum(campaign["exposure_num"] for campaign in dataset_daily[date_obj])
-                    report_sheet[f"E{data_idx}"] = sum(campaign["click_num"] for campaign in dataset_daily[date_obj])
-                    report_sheet[f"H{data_idx}"] = sum(campaign["ad_cost"] for campaign in dataset_daily[date_obj])
-                    report_sheet[f"I{data_idx}"] = sum(campaign["convert_num"] for campaign in dataset_daily[date_obj])
-                    report_sheet[f"L{data_idx}"] = sum(campaign["convert_cost"] for campaign in dataset_daily[date_obj])
-                    continue
-        #################################################### ["쿠팡_누적"] 시트
+
+        ### total 
         report_sheet = report_wb["쿠팡_누적"]
-        key_col_dict_c = {"campaign_name": "C", "exposure_num": "D", "click_num": "E", "ad_cost": "H", "convert_num": "I", "convert_cost": "L"}
-        rows = [9, 10]
-
-        for row in rows:
-            # Get the campaign name from the Excel sheet
-            campaign = report_sheet[f"{key_col_dict_c['campaign_name']}{row}"].value
+        if not df_monthly_total.empty:
+            df_monthly_total = df_monthly_total[["광고집행 상품명", "키워드", "노출수", "클릭수", "광고비", "총 판매수량(14일)", "총 전환매출액(14일)"]]
+            df_monthly_total.columns = ["상품명", "키워드", "노출수", "클릭수", "광고비", "전환수", "전환매출"]
+            df_monthly_total["키워드"] = df_monthly_total["키워드"].fillna("비검색 영역")
             
-            if campaign in result_campaign.index:
-                for key, col in key_col_dict_c.items():
-                    if key != "campaign_name":  # Skip writing the campaign name back
-                        # Populate the cell with the corresponding value from the DataFrame
-                        report_sheet[f"{col}{row}"] = result_campaign.loc[campaign, key]
+            summary_product = df_monthly_total.groupby("상품명")[["노출수", "클릭수", "광고비", "전환수", "전환매출"]].sum()
+            summary_product = summary_product.sort_values(by=["전환수", "광고비"], ascending=[False, False]).reset_index()
 
-        key_col_dict_k = {"keyword": "C", "exposure_num": "D", "click_num": "E", "ad_cost": "H", "convert_num": "I", "convert_cost": "L"}
-        start_row = 33
-        for idx, row in result_by_keyword.iterrows():
-            for key, col in key_col_dict_k.items():
-                report_sheet[f"{col}{start_row+idx}"] = row[key]
+            sum_by_keyword = df_monthly_total.groupby("키워드")[["노출수", "클릭수", "광고비", "전환수", "전환매출"]].sum()
+            sum_by_keyword = sum_by_keyword.sort_values(by=["전환수", "광고비"], ascending=[False, False]).reset_index()
+            
+            summary_start_row = 9
+            key_col_dict_product = {"상품명": "C", "노출수": "D", "클릭수": "E", "광고비": "H", "전환수": "I", "전환매출": "L"}
+            for data_row_idx, data_row in summary_product.iterrows():
+                for key, col in key_col_dict_product.items():
+                    report_sheet[f"{col}{summary_start_row+data_row_idx}"] = data_row[key]
+
+            start_row = 33
+            key_col_dict_o = {"키워드": "C", "노출수": "D", "클릭수": "E", "광고비": "H", "전환수": "I", "전환매출": "L"}
+            for data_row_idx, data_row in sum_by_keyword.iterrows():
+                for key, col in key_col_dict_o.items():
+                    report_sheet[f"{col}{start_row+data_row_idx}"] = data_row[key]
+
+        else:
+            self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.input_file_path_2} 파일이 비어있습니다.\n")
+
         try:
             report_wb.save(self.output_file_path)
         except PermissionError:
