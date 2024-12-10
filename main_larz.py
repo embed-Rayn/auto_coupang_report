@@ -174,23 +174,22 @@ class WindowClass(QMainWindow, Ui_Dialog):
         else:
             self.textEdit_log.setText(f"{self.textEdit_log.toPlainText()}{self.input_file_path_2}일일 데이터(캐디X) 파일이 비어있습니다.\n")
 
-        df_daily_total = pd.concat([df_daily_o, df_daily_x], ignore_index=True)
-        if not df_daily_total.empty:
-            df_daily_total = df_daily_total.groupby('날짜', as_index=False).sum()
-            key_col_dict_tot = {"노출수": "D", "클릭수": "E", "광고비": "H", "전환수": "I", "전환매출": "L"}
-            for data_row_idx, row in df_daily_total.iterrows():
-                date_obj = row['날짜']
-                for row_idx, cell in enumerate(report_sheet["B"]):
-                    try:
-                        cv_date = cell.value.date()
+        # if not df_daily_total.empty:
+        #     df_daily_total = df_daily_total.groupby('날짜', as_index=False).sum()
+        #     key_col_dict_tot = {"노출수": "D", "클릭수": "E", "광고비": "H", "전환수": "I", "전환매출": "L"}
+        #     for data_row_idx, row in df_daily_total.iterrows():
+        #         date_obj = row['날짜']
+        #         for row_idx, cell in enumerate(report_sheet["B"]):
+        #             try:
+        #                 cv_date = cell.value.date()
                         
-                        if cv_date.strftime("%y-%m-%d") == date_obj.strftime("%y-%m-%d"):
-                            break
-                    except AttributeError:
-                        continue
-                data_idx = row_idx + 1
-                for key, col in key_col_dict_tot.items():
-                    report_sheet[f"{col}{data_idx}"] = row[key]
+        #                 if cv_date.strftime("%y-%m-%d") == date_obj.strftime("%y-%m-%d"):
+        #                     break
+        #             except AttributeError:
+        #                 continue
+        #         data_idx = row_idx + 1
+        #         for key, col in key_col_dict_tot.items():
+        #             report_sheet[f"{col}{data_idx}"] = row[key]
         #################################################### ["요약"] 시트
         report_sheet = report_wb["요약"]
         report_sheet["C110"] = report_day
